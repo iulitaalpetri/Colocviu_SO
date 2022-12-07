@@ -1,0 +1,97 @@
+//1
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <errno.h>
+
+int main()
+{
+        pid_t pid = fork();// pt copil= 0, pt tata avem pid ul copilului
+        if(pid < 0) return errno;
+        else if(pid == 0)//instr copil
+        {
+                char *argv[] = {"ls", NULL};
+                execve("/bin/ls", argv, NULL);// suprascrie procesul apelant, arg 1- calea abs(which), arg 2- calea, arg, null, arg 3- var de sistem
+                perror(NULL);
+        }
+        else if(pid > 0)// instr tata
+        {
+                printf("My PID=%d, Child PID=%d", getpid(), pid);
+                wait(NULL);
+                printf("\nChild %d finished \n", pid);
+        }
+        return 0;
+}
+
+//2
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <errno.h>
+
+int main(int argc, char** argv)
+{
+        int n = atoi(argv[1]);
+        pid_t pid = fork();
+        if(pid < 0) return errno;
+        else if(pid == 0)
+        {
+                printf("%d: %d ", n, n);
+                while(n != 1)
+                {
+                        if(n % 2 == 1) n = n*3 + 1;
+                        else n = n/2;
+                        printf("%d ", n);
+                }
+                printf("\n");
+        }
+        else if(pid > 0)
+        {
+                wait(NULL);
+                printf("Child %d finished", pid);
+        }
+        return 0;
+}
+
+//3
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <errno.h>
+
+int main(int argc, char** argv)
+{
+        int n = argc-1;
+        int *v = malloc(sizeof(int) * argc);
+        for(int i = 0; i < n; ++i)
+                v[i] = atoi(argv[i+1]);
+
+        printf("Starting parent %d\n", getpid());
+        for(int i = 0; i < n; ++i)
+        {
+                pid_t pid = fork();
+                if(pid < 0) return errno;
+                if(pid == 0)
+                {
+                        int x = v[i];
+                        printf("%d: %d ", x, x);
+                        while(x != 1)
+                        {
+                                if(x % 2 == 1) x = x*3 + 1;
+                                else x = x / 2;
+                                printf("%d ", x);
+                        }
+                        printf("\nDone Parent %d Me %d\n", getppid(), pid);
+                        exit(0);
+                }
+        }
+        for(int i = 0; i < n; ++i) wait(NULL);
+        printf("Done Parent %d Me %d\n", getppid(), getpid());
+        return 0;
+}
